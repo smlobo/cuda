@@ -140,7 +140,10 @@ main(void)
     vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
 
     auto t2 = Clock::now();
-    std::cout << "Kernel time: " << t2-t1 << '\n';
+    //std::cout << "Kernel time: " << t2-t1 << '\n';
+    auto dur = t2 - t1;
+    int nanos = std::chrono::nanoseconds(dur).count();
+    printf("Kernel time: %d nanos\n", nanos);
 
     err = cudaGetLastError();
 
