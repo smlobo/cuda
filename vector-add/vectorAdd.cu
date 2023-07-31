@@ -18,11 +18,13 @@
  */
 
 #include <stdio.h>
+#include <iostream>
+#include <chrono>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
-#include <helper_cuda.h>
+// #include <helper_cuda.h>
 /**
  * CUDA Kernel Device code
  *
@@ -130,7 +132,16 @@ main(void)
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
     printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
+
+    // Time the kernel
+    typedef std::chrono::high_resolution_clock Clock;
+    auto t1 = Clock::now();
+
     vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
+
+    auto t2 = Clock::now();
+    std::cout << "Kernel time: " << t2-t1 << '\n';
+
     err = cudaGetLastError();
 
     if (err != cudaSuccess)
