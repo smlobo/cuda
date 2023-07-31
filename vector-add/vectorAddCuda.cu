@@ -131,7 +131,7 @@ main(void)
     // Launch the Vector Add CUDA Kernel
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
-    printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
+    printf("CUDA vectorAdd kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
 
     // Time the kernel
     typedef std::chrono::high_resolution_clock Clock;
@@ -140,10 +140,9 @@ main(void)
     vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
 
     auto t2 = Clock::now();
-    //std::cout << "Kernel time: " << t2-t1 << '\n';
     auto dur = t2 - t1;
     int nanos = std::chrono::nanoseconds(dur).count();
-    printf("Kernel time: %d nanos\n", nanos);
+    printf("Cuda vectorAdd<<<>>> time: %d ns\n", nanos);
 
     err = cudaGetLastError();
 

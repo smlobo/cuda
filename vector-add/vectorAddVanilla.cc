@@ -65,7 +65,7 @@ main(void)
     }
 
     // Launch the Vanilla Vector Add CUDA Kernel
-    printf("Vanilla kernel launch\n");
+    printf("Vanilla vectorAdd launch\n");
 
     // Time the kernel
     typedef std::chrono::high_resolution_clock Clock;
@@ -74,10 +74,9 @@ main(void)
     vectorAdd(h_A, h_B, h_C, numElements);
 
     auto t2 = Clock::now();
-    //std::cout << "Kernel time: " << t2-t1 << '\n';
     auto dur = t2 - t1;
     int nanos = std::chrono::nanoseconds(dur).count();
-    printf("Kernel time: %d nanos\n", nanos);
+    printf("Vanilla vectorAdd() time: %d ns\n", nanos);
 
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
