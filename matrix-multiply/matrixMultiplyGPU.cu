@@ -129,6 +129,7 @@ int main(int argc, char** argv)
         int q = randomInt(numElements);
         verify(h_A, h_B, h_C, numElements, p, q);
     }
+    printf("Verified for %d random elements\n", numVerifications);
     // Verify all results
     // for (int i = 0; i < numElements; i++) {
     //     for (int j = 0; j < numElements; j++) {

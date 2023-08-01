@@ -3,10 +3,18 @@
 
 ```
 % ./matrixMultiplyGPU
-
+[Matrix Multiplication of 1024x1024 elements]
+Matrix Multiply on CPU launch
+Matrix Multiply on GPU time (kernel): 31623 ns
+Matrix Multiply on GPU time (all): 1013796900 ns
+Verified for 100 random elements
 ```
 
 ```
 % ./matrixMultiplyCPU
-
+./matrixMultiplyCPU 
+[Matrix Multiplication of 1024x1024 elements]
+Matrix Multiply on CPU launch
+Matrix Multiply on CPU time: 15491845464 ns
+Verified for 100 random elements
 ```
