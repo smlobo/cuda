@@ -11,10 +11,9 @@
 
 #include "utilities.h"
 
-const int numVerifications = 10;
+const int numVerifications = 100;
 
-void matrixMultiply(const float *A, const float *B, float *C, int numElements)
-{
+void matrixMultiply(const float *A, const float *B, float *C, int numElements) {
     for (int i = 0; i < numElements; i++) {
         for (int j = 0; j < numElements; j++) {
             float sum = 0.0;
@@ -35,11 +34,10 @@ void verify(const float *A, const float *B, const float *C, int numElements,
 
     int index = p*numElements + q;
     assert(fabsf(C[index] - sum) < FLT_EPSILON);
-    printf("Verification PASSED for [%d][%d] %.4f / %.4f\n", p, q, C[index], sum);
+    // printf("Verification PASSED for [%d][%d] %.4f / %.4f\n", p, q, C[index], sum);
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // Print the vector length to be used, and compute its size
     int numElements = 1024;
     printf("[Matrix Multiplication of %dx%d elements]\n", numElements, numElements);
@@ -82,6 +80,7 @@ int main(int argc, char** argv)
         int q = randomInt(numElements);
         verify(h_A, h_B, h_C, numElements, p, q);
     }
+    printf("Verified for %d random elements\n", numVerifications);
 
     // Free host memory
     delete[] h_A;
