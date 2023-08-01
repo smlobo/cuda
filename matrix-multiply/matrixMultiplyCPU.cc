@@ -64,16 +64,15 @@ int main(int argc, char** argv) {
     // Launch matrix multiply on the CPU
     printf("Matrix Multiply on CPU launch\n");
 
-    // Time the kernel
+    // Time the matrix multiply
     typedef std::chrono::high_resolution_clock Clock;
-    auto t1 = Clock::now();
+    auto tStart = Clock::now();
 
     matrixMultiply(h_A, h_B, h_C, numElements);
 
-    auto t2 = Clock::now();
-    auto dur = t2 - t1;
-    unsigned long nanos = std::chrono::nanoseconds(dur).count();
-    printf("Matrix Multiply on CPU time: %ld ns\n", nanos);
+    auto duration = Clock::now() - tStart;
+    printf("Matrix Multiply on CPU time: %ld ns\n", 
+        std::chrono::nanoseconds(duration).count());
 
     for (int i = 0; i < numVerifications; i++) {
         int p = randomInt(numElements);
