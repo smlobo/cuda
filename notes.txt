@@ -1,0 +1,22 @@
+
+Shared memory:
+~~~~~~~~~~~~~~
+
+  Static shared memory:
+
+    const int size = 48;
+    __global__ void k(...) {
+      __shared__ int temp[size];
+      ...
+    }
+    k<<<grid, block>>>(...);
+
+  Dynamic shared memory:
+
+    __global__ void k(...) {
+      __shared__ int temp[];
+      ...
+    }
+    int shared_size_in_bytes = 192;
+    k<<<grid, block, shared_size_in_bytes>>>(...);
+
