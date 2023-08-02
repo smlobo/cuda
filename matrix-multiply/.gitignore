@@ -1,2 +1,3 @@
 matrixMultiplyGPU
+matrixMultiplyGPUShared
 matrixMultiplyCPU
