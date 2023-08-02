@@ -7,7 +7,7 @@ CPP_FLAGS = -g -std=c++14
 
 INCLUDE_DIR = -I../common
 
-COMMON_FILES = ../common/utilities.cc
+COMMON_FILES = verify.cc ../common/utilities.cc
 
 all: matrixMultiplyGPU matrixMultiplyGPUShared matrixMultiplyCPU
 

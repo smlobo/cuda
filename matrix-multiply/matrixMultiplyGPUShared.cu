@@ -13,8 +13,10 @@
 #include "utilities.h"
 
 const int numVerifications = 100;
-const int numElements = 2048;
+const int numElements = 1024;
 const int numThreads = 16;
+
+void verify(const float*, const float*, const float*, int, int, int, int);
 
 __global__ void matrixMultiply(const float *A, const float *B, float *C, 
     int numElements) {
@@ -55,19 +57,6 @@ __global__ void matrixMultiply(const float *A, const float *B, float *C,
 
         C[index] = sum;
     }
-}
-
-void verify(const float *A, const float *B, const float *C, int numElements, 
-    int p, int q) {
-
-    // Verify that the result for C[p][q] is accurate
-    float sum = 0.0;
-    for (int i = 0; i < numElements; ++i)
-        sum += A[p*numElements+i] * B[i*numElements+q];
-
-    int index = p*numElements + q;
-    // printf("Verification for [%d][%d] %.8f / %.8f\n", p, q, C[index], sum);
-    assert(fabsf(C[index] - sum) < CUDA_FLT_EPSILON);
 }
 
 int main(int argc, char** argv)
@@ -153,7 +142,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < numVerifications; i++) {
         int p = randomInt(numElements);
         int q = randomInt(numElements);
-        verify(h_A, h_B, h_C, numElements, p, q);
+        verify(h_A, h_B, h_C, numElements, p, q, i);
     }
     printf("Verified for %d random elements\n", numVerifications);
     // Verify all results

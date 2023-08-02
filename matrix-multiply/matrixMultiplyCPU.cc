@@ -13,6 +13,8 @@
 
 const int numVerifications = 100;
 
+void verify(const float*, const float*, const float*, int, int, int, int);
+
 void matrixMultiply(const float *A, const float *B, float *C, int numElements) {
     for (int i = 0; i < numElements; i++) {
         for (int j = 0; j < numElements; j++) {
@@ -22,19 +24,6 @@ void matrixMultiply(const float *A, const float *B, float *C, int numElements) {
             C[i*numElements+j] = sum;
         }
     }
-}
-
-void verify(const float *A, const float *B, const float *C, int numElements, 
-    int p, int q) {
-
-    // Verify that the result for C[p][q] is accurate
-    float sum = 0.0;
-    for (int i = 0; i < numElements; ++i)
-        sum += A[p*numElements+i] * B[i*numElements+q];
-
-    int index = p*numElements + q;
-    assert(fabsf(C[index] - sum) < FLT_EPSILON);
-    // printf("Verification PASSED for [%d][%d] %.4f / %.4f\n", p, q, C[index], sum);
 }
 
 int main(int argc, char** argv) {
@@ -77,7 +66,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < numVerifications; i++) {
         int p = randomInt(numElements);
         int q = randomInt(numElements);
-        verify(h_A, h_B, h_C, numElements, p, q);
+        verify(h_A, h_B, h_C, numElements, p, q, i);
     }
     printf("Verified for %d random elements\n", numVerifications);
 
