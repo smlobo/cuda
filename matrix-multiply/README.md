@@ -24,6 +24,6 @@ Verified for 100 random elements
 ./matrixMultiplyCPU 
 [Matrix Multiplication of 1024x1024 elements]
 Matrix Multiply on CPU launch
-Matrix Multiply on CPU time: 15491845464 ns
+Matrix Multiply on CPU time: 5326241345 ns
 Verified for 100 random elements
 ```

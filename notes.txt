@@ -26,7 +26,16 @@ GPU Architecture
 
 Software      Hardware
 --------      --------
-Thread        Scalar Processor (SP)
-Thread Block  Multiprocessor (SM)
-Grid          Device
+Thread        Scalar Processor (SP) (Core)
+Thread Block  Multiprocessor (SM, Streaming Multiprocessor)
+Grid          Device (GPU)
 
+Nvidia machine code: SASS stored in ELF
+Nvidia IR: PTX (similar to LLVM IR)
+
+32 Threads per Warp
+64 Warps per SM
+64 to 192 SMs per GPU
+
+1024 Threads per Block; Threads should be a multiple of Threads/Warp (32)
+64K Blocks per Grid

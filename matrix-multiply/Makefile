@@ -1,9 +1,10 @@
 # Makefile for matrixMultiply
 # * GPU
+# * GPU with SM shared memory
 # * CPU
 
-# CPP_FLAGS = -O -std=c++14
-CPP_FLAGS = -g -std=c++14
+CPP_FLAGS = -O -std=c++14
+# CPP_FLAGS = -g -std=c++14
 
 INCLUDE_DIR = -I../common
 
