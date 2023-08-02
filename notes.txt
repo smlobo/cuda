@@ -20,3 +20,13 @@ Shared memory:
     int shared_size_in_bytes = 192;
     k<<<grid, block, shared_size_in_bytes>>>(...);
 
+
+GPU Architecture
+~~~~~~~~~~~~~~~~
+
+Software      Hardware
+--------      --------
+Thread        Scalar Processor (SP)
+Thread Block  Multiprocessor (SM)
+Grid          Device
+

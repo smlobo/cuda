@@ -1,5 +1,6 @@
 /*
  * CUDA Matrix Multiplication: C = A x B.
+ * Using shared memory common to a Thread Block
  */
 
 #include <cstdio>
@@ -12,9 +13,15 @@
 #include "utilities.h"
 
 const int numVerifications = 100;
+const int numElements = 2048;
+const int numThreads = 16;
 
 __global__ void matrixMultiply(const float *A, const float *B, float *C, 
     int numElements) {
+
+    // Cache of shared memory for a Thread Block
+    __shared__ float cacheA[numThreads][numThreads];
+    __shared__ float cacheB[numThreads][numThreads];
 
     int indexX = blockDim.x*blockIdx.x + threadIdx.x;
     int indexY = blockDim.y*blockIdx.y + threadIdx.y;
@@ -22,11 +29,31 @@ __global__ void matrixMultiply(const float *A, const float *B, float *C,
 
     if (indexX < numElements && indexY < numElements) {
         float sum = 0.0;
-        for (int i = 0; i < numElements; i++)
-            sum += A[indexX*numElements+i] * B[i*numElements+indexY];
+
+        // Iterate over unique blocks (move stencil to the next block)
+        int numBlocks = numElements/numThreads;
+        for (int i = 0; i < numBlocks; i++) {
+
+            // Load data into shared memory
+            int xA = indexX;
+            int yA = i * numThreads + threadIdx.y;
+            cacheA[threadIdx.x][threadIdx.y] = A[xA*numElements + yA];
+            int xB = i * numThreads + threadIdx.x;
+            int yB = indexY;
+            cacheB[threadIdx.x][threadIdx.y] = B[xB*numElements + yB];
+
+            // Synchronize with remaining threads in block; cache filled
+            __syncthreads();
+
+            // Accumulate sum for the current cache 
+            for (int j = 0; j < numThreads; j++)
+                sum += cacheA[threadIdx.x][j] * cacheB[j][threadIdx.y];
+
+            // Synchronize before cache gets overwritten
+            __syncthreads();
+        }
+
         C[index] = sum;
-        // printf("cuda: [%d][%d] [%d] %.4f %.4f\n", indexX, indexY, index, 
-        //     C[indexX*numElements+indexY], sum);
     }
 }
 
@@ -46,7 +73,6 @@ void verify(const float *A, const float *B, const float *C, int numElements,
 int main(int argc, char** argv)
 {
     // Print the vector length to be used, and compute its size
-    int numElements = 2048;
     printf("[Matrix Multiplication of %dx%d elements]\n", numElements, numElements);
 
     size_t size = numElements * numElements;
@@ -92,10 +118,10 @@ int main(int argc, char** argv)
     assert(err == cudaSuccess);
 
     // Launch matrix multiply on the GPU
-    dim3 threadsPerBlock(16, 16);
-    dim3 blocksPerGrid((numElements+threadsPerBlock.x-1)/threadsPerBlock.x, 
-        (numElements+threadsPerBlock.y-1)/threadsPerBlock.y);
-    printf("Matrix Multiply on GPU launch\n");
+    dim3 threadsPerBlock(numThreads, numThreads);
+    int numBlocks = (numElements+numThreads-1)/numThreads;
+    dim3 blocksPerGrid(numBlocks, numBlocks);
+    printf("Matrix Multiply Shared on GPU launch\n");
 
     // Time the kernel
     auto tKernelStart = Clock::now();
@@ -104,14 +130,14 @@ int main(int argc, char** argv)
     cudaCheckErrors("kernel launch failure");
 
     auto kernelDuration = Clock::now() - tKernelStart;
-    printf("Matrix Multiply on GPU time (kernel): %ld ns\n", 
+    printf("Matrix Multiply Shared on GPU time (kernel): %ld ns\n", 
         std::chrono::nanoseconds(kernelDuration).count());
 
     // Copy the results back
     err = cudaMemcpy(h_C, d_C, d_size, cudaMemcpyDeviceToHost);
     assert(err == cudaSuccess);
 
-    // Free devie vectors
+    // Free device vectors
     err = cudaFree(d_A);
     assert(err == cudaSuccess);
     err = cudaFree(d_B);
@@ -120,7 +146,7 @@ int main(int argc, char** argv)
     assert(err == cudaSuccess);
 
     auto totalDuration = Clock::now() - tStart;
-    printf("Matrix Multiply on GPU time (with copy): %ld ns\n", 
+    printf("Matrix Multiply Shared on GPU time (with copy): %ld ns\n", 
         std::chrono::nanoseconds(totalDuration).count());
 
     // Verify results
