@@ -1,6 +1,61 @@
 
+SIMT
+~~~~
+
+Single Instruction Multiple Threads
+The simplest way to understand SIMT is to imagine a multi-core system, where each core has its own register file, its own ALUs (both SIMD and Scalar) and its own data cache, but that unlike a standard multi-core system which has multiple independent instruction caches and decoders, as well as multiple independent Program Counter registers, the instructions are synchronously broadcast to all SIMT cores from a single unit with a single instruction cache and a single instruction decoder which reads instructions using a single Program Counter.
+
+Since all Threads in a Warp execute the same instructions, branches result in 
+extra code being unnecessarily executed.
+For simple branches, predicated instructions are generated. These are not 
+terrible for performance.
+For complex branches, Threads for the "other" conditional are flagged and 
+execute NOPs. This is the "branch divergence" penalty on CUDA.
+
+SIMD
+~~~~
+
+Single Instruction Multiple Data
+
+x64:
+MMX (MultiMedia eXtensions)       64-bit %xmm0-%xmm7
+SSE (Streaming SIMD Extensions)   128-bit %xmm0-%xmm7
+SSE2                              128-bit %xmm0-%xmm15
+AVX (Advanced Vector eXtensions)  256-bit %ymm0-%ymm15    
+AVX-512                           512-bit %zmm0-%zmm31    EVEX prefix
+
+Terms
+~~~~~
+
+Scalar: Single data type
+Vector: Collection of scalar elements
+
+Performance Toolkit
+~~~~~~~~~~~~~~~~~~~
+
+* Transformations (Vector Add, Matrix Multiply)
+  - Grid Stride Loop
+    Instead of starting a new thread, have the existing thread iterate over 
+    the input vectors by Grid stride (gridDim * blockDim)
+  - Shared Memory
+    Use the faster Shared memory bank in each SP/Core to cache data common 
+    to multiple threads. In Matrix Multiply, each thread iterates over (common) 
+    rows and columns. If this is cached, the 32 threads have reduced memory 
+    latency, and better thread occupancy.
+* Reductions (Summing)
+  - Binary Tree
+    Each thread performs partial sum.
+    . Grid Stride Loop to reduce problem to gridDim*blockDim
+    . Shared Memory for caching between threads in the same block.
+
 Shared memory:
 ~~~~~~~~~~~~~~
+
+* Faster than global memory
+* Shared memory bank in each core (48K)
+* Useful for Matrix Multiply type transformations since each thread does 
+  iteration, and having a common cache speeds up memory access for all threads 
+  in a Warp / Thread Block (32 threads).
 
   Static shared memory:
 
@@ -20,6 +75,27 @@ Shared memory:
     int shared_size_in_bytes = 192;
     k<<<grid, block, shared_size_in_bytes>>>(...);
 
+Atomics
+~~~~~~~
+
+* Indivisible Read-modify-write; serialization
+  o min/max
+  o add/sub
+  o inc/dec
+  o and/or/xor
+  o bitwise
+  o exch/cas
+* Uses:
+  o Determine my place in an order
+    int my_position = atomicAdd(order, 1);
+  o Reserve space in a buffer
+    int my_offset = atomicAdd(buffer_idx, my_dsize);
+
+Reductions
+~~~~~~~~~~
+
+* Parallel reduction; Tree based approach
+* Decompose into multiple kernels
 
 GPU Architecture
 ~~~~~~~~~~~~~~~~
@@ -39,3 +115,34 @@ Nvidia IR: PTX (similar to LLVM IR)
 
 1024 Threads per Block; Threads should be a multiple of Threads/Warp (32)
 64K Blocks per Grid
+
+Note: Shared memory & L1 cache are different memory structures
+
+GeForce GT 650M
+~~~~~~~~~~~~~~~
+
+* CC3.0
+* GK107
+* Kepler Architecture
+* CUDA Cores 384
+* TMUs 32
+* ROPs 16
+* SMX Count 2
+* Shared Memory 48K
+* L1 Cache 16 KB (per SMX)
+* L2 Cache 256 KB
+
+nvprof
+~~~~~~
+
+# List events & metrics
+% nvprof --query-events
+% nvprof --query-metrics
+
+# Get *all* events/metrics
+% sudo nvprof --events all ...
+% sudo nvprof --metrics all ...
+
+# Trace GPU
+% sudo nvprof --print-gpu-trace ...
+
