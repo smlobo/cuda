@@ -11,13 +11,9 @@
 
 __global__ void
 vectorAdd(const float *A, const float *B, float *C, int numElements) {
-
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-
-    if (i < numElements)
-    {
+    for (int i = blockDim.x * blockIdx.x + threadIdx.x; i < numElements; 
+        i += gridDim.x * blockDim.x)
         C[i] = A[i] + B[i];
-    }
 }
 
 int main(void) {
@@ -25,7 +21,7 @@ int main(void) {
     cudaError_t err = cudaSuccess;
 
     // Print the vector length to be used, and compute its size
-    int numElements = 50000;
+    int numElements = 10000000;
     size_t size = numElements * sizeof(float);
     printf("[Vector addition of %d elements]\n", numElements);
 
@@ -48,10 +44,6 @@ int main(void) {
         h_B[i] = randomFloat();
     }
 
-    // Time the GPU code
-    typedef std::chrono::high_resolution_clock Clock;
-    auto tStart = Clock::now();
-
     // Allocate the device input vector A, B, C
     float *d_A, *d_B, *d_C;
     err = cudaMalloc((void **)&d_A, size);
@@ -60,6 +52,10 @@ int main(void) {
     assert(err == cudaSuccess);
     err = cudaMalloc((void **)&d_C, size);
     assert(err == cudaSuccess);
+
+    // Time the GPU code
+    typedef std::chrono::high_resolution_clock Clock;
+    auto tStart = Clock::now();
 
     // Copy the host input vectors A and B in host memory to the device input 
     // vectors in device memory
@@ -71,7 +67,7 @@ int main(void) {
 
     // Launch the Vector Add CUDA Kernel
     int threadsPerBlock = 256;
-    int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = 1024;
     printf("CUDA vectorAdd kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
 
     vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
@@ -89,6 +85,10 @@ int main(void) {
     err = cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
     assert(err == cudaSuccess);
 
+    auto duration = Clock::now() - tStart;
+    printf("Vector Add with Grid Stride on GPU time: %s\n", 
+        nanoToString(std::chrono::nanoseconds(duration).count()));
+
     // Free device vectors
     err = cudaFree(d_A);
     assert(err == cudaSuccess);
@@ -96,10 +96,6 @@ int main(void) {
     assert(err == cudaSuccess);
     err = cudaFree(d_C);
     assert(err == cudaSuccess);
-
-    auto duration = Clock::now() - tStart;
-    printf("Vector Add with Grid Stride on GPU time: %s\n", 
-        nanoToString(std::chrono::nanoseconds(duration).count()));
 
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
