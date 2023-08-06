@@ -1,2 +1,3 @@
-vectorAddCuda
-vectorAddVanilla
+vectorAddGPU
+vectorAddGPUGridStride
+vectorAddCPU

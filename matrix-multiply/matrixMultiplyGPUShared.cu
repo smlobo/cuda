@@ -84,10 +84,6 @@ int main(int argc, char** argv)
     }
 
     // CUDA 
-    // CUDA timing
-    typedef std::chrono::high_resolution_clock Clock;
-    auto tStart = Clock::now();
-
     cudaError_t err = cudaSuccess;
     int d_size = size * sizeof(float);
 
@@ -99,6 +95,10 @@ int main(int argc, char** argv)
     assert(err == cudaSuccess);
     err = cudaMalloc((void**)&d_C, d_size);
     assert(err == cudaSuccess);
+
+    // CUDA timing
+    typedef std::chrono::high_resolution_clock Clock;
+    auto tStart = Clock::now();
 
     // Initialize the input device vectors
     err = cudaMemcpy(d_A, h_A, d_size, cudaMemcpyHostToDevice);
@@ -112,19 +112,16 @@ int main(int argc, char** argv)
     dim3 blocksPerGrid(numBlocks, numBlocks);
     printf("Matrix Multiply Shared on GPU launch\n");
 
-    // Time the kernel
-    auto tKernelStart = Clock::now();
-
     matrixMultiply<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
     cudaCheckErrors("kernel launch failure");
-
-    auto kernelDuration = Clock::now() - tKernelStart;
-    printf("Matrix Multiply Shared on GPU time (kernel): %ld ns\n", 
-        std::chrono::nanoseconds(kernelDuration).count());
 
     // Copy the results back
     err = cudaMemcpy(h_C, d_C, d_size, cudaMemcpyDeviceToHost);
     assert(err == cudaSuccess);
+
+    auto duration = Clock::now() - tStart;
+    printf("Matrix Multiply Shared on GPU time: %s\n", 
+        nanoToString(std::chrono::nanoseconds(duration).count()));
 
     // Free device vectors
     err = cudaFree(d_A);
@@ -133,10 +130,6 @@ int main(int argc, char** argv)
     assert(err == cudaSuccess);
     err = cudaFree(d_C);
     assert(err == cudaSuccess);
-
-    auto totalDuration = Clock::now() - tStart;
-    printf("Matrix Multiply Shared on GPU time (with copy): %ld ns\n", 
-        std::chrono::nanoseconds(totalDuration).count());
 
     // Verify results
     for (int i = 0; i < numVerifications; i++) {

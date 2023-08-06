@@ -24,4 +24,7 @@ double randomDouble();
 int randomInt(int, int);
 int randomInt(int);
 
+// Printing utilities
+char* nanoToString(long n);
+
 #endif // _UTILITIES_H

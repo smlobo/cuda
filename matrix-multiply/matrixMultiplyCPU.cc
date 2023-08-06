@@ -60,8 +60,8 @@ int main(int argc, char** argv) {
     matrixMultiply(h_A, h_B, h_C, numElements);
 
     auto duration = Clock::now() - tStart;
-    printf("Matrix Multiply on CPU time: %ld ns\n", 
-        std::chrono::nanoseconds(duration).count());
+    printf("Matrix Multiply on CPU time: %s\n", 
+        nanoToString(std::chrono::nanoseconds(duration).count()));
 
     for (int i = 0; i < numVerifications; i++) {
         int p = randomInt(numElements);

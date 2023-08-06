@@ -1,16 +1,28 @@
 # Makefile for vectorAdd
-# * cuda
-# * vanilla
+# * GPU
+# * GPU with a Grid Stride loop
+# * CPU
 
 CPP_FLAGS = -O -std=c++14
 
-all: vectorAddCuda vectorAddVanilla
+INCLUDE_DIR = -I../common
 
-.PHONY: vectorAddCuda
-vectorAddCuda:
-	nvcc $(CPP_FLAGS) vectorAddCuda.cu -o vectorAddCuda
+COMMON_FILES = ../common/utilities.cc
 
-.PHONY: vectorAddVanilla
-vectorAddVanilla:
-	g++ $(CPP_FLAGS) vectorAddVanilla.cc -o vectorAddVanilla
+all: vectorAddGPU vectorAddGPUGridStride vectorAddCPU
+
+.PHONY: vectorAddGPU
+vectorAddGPU:
+	nvcc $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) vectorAddGPU.cu -o \
+	vectorAddGPU
+
+.PHONY: vectorAddGPUGridStride
+vectorAddGPUGridStride:
+	nvcc $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) vectorAddGPUGridStride.cu \
+	-o vectorAddGPUGridStride
+
+.PHONY: vectorAddCPU
+vectorAddCPU:
+	g++ $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) vectorAddCPU.cc -o \
+	vectorAddCPU
 

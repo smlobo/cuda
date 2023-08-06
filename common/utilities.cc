@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <string>
 
 #include "utilities.h"
 
@@ -37,4 +38,20 @@ int randomInt(int from, int to) {
     int diff = to - from;
     int r = rand() % diff;
     return r + from;
+}
+
+// Take in number of nanoseconds, and return a string with ms, us, ns
+char timeStr[100];
+std::string timeSuffixTable[] = {"ns", "us", "ms", "sec"};
+char* nanoToString(long n) {
+    int count = 0;
+    int whole = n;
+    int decimal = 0;
+    while (whole > 1000 && count <= 3) {
+        count++;
+        decimal = whole%1000;
+        whole /= 1000;
+    }
+    sprintf(timeStr, "%d.%d%s", whole, decimal, timeSuffixTable[count].c_str());
+    return timeStr;
 }
