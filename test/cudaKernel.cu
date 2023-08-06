@@ -1,16 +1,16 @@
 #include <cstdio>
 
 __global__ void kernel1d(float* dummy) {
-    printf("[{%d}] [{%d}] gridDim.x: %d, blockDim.x: %d\n", blockIdx.x, 
-        threadIdx.x, gridDim.x, blockDim.x);
+    printf("[{%d}] [{%d}] gridDim.x: %d, blockDim.x: %d, warpSize: %d\n", 
+        blockIdx.x, threadIdx.x, gridDim.x, blockDim.x, warpSize);
     if (threadIdx.x < 1)
         dummy[threadIdx.x] += 1.0;
 }
 
 __global__ void kernel2d(float* dummy) {
     printf("[{%d,%d}] [{%d,%d}] gridDim.x: %d, gridDim.y: %d | blockDim.x: %d, "
-        "blockDim.y: %d\n", blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, 
-        gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+        "blockDim.y: %d | warpSize: %d\n", blockIdx.x, blockIdx.y, threadIdx.x, 
+        threadIdx.y, gridDim.x, gridDim.y, blockDim.x, blockDim.y, warpSize);
     if (threadIdx.x < 1)
         dummy[threadIdx.x] += 1.0;
 }
