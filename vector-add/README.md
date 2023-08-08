@@ -1,4 +1,50 @@
 
+## Results on an Ubuntu 22.04 CUDA 12.2 Nvidia Quadro T2000 (Lenovo ThinkPad P53)
+
+```
+% ./vectorAddGPU
+[Vector addition of 1M elements]
+Copy input data from the host memory to the CUDA device
+CUDA vectorAdd kernel launch with 3907 blocks of 256 threads
+Copy output data from the CUDA device to the host memory
+Vector Add on GPU time: 3.743ms
+Test PASSED
+% nvprof --print-gpu-trace ./vectorAddGPU
+[Vector addition of 1M elements]
+==33973== NVPROF is profiling process 33973, command: ./vectorAddGPU
+Copy input data from the host memory to the CUDA device
+CUDA vectorAdd kernel launch with 3907 blocks of 256 threads
+Copy output data from the CUDA device to the host memory
+Vector Add on GPU time: 3.962ms
+Test PASSED
+==33973== Profiling application: ./vectorAddGPU
+==33973== Profiling result:
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+3.16810s  690.72us                    -               -         -         -         -  3.8147MB  5.3934GB/s    Pageable      Device  Quadro T2000 (0         1         7  [CUDA memcpy HtoD]
+3.16895s  618.56us                    -               -         -         -         -  3.8147MB  6.0225GB/s    Pageable      Device  Quadro T2000 (0         1         7  [CUDA memcpy HtoD]
+3.16965s  103.20us           (3907 1 1)       (256 1 1)        16        0B        0B         -           -           -           -  Quadro T2000 (0         1         7  vectorAdd(float const *, float const *, float*, int) [130]
+3.16977s  1.2098ms                    -               -         -         -         -  3.8147MB  3.0794GB/s      Device    Pageable  Quadro T2000 (0         1         7  [CUDA memcpy DtoH]
+```
+
+```
+% ./vectorAddGPUCublas 
+[Vector addition of 1M elements]
+Vector Add on GPU with libcublas time: 3.900ms
+Test PASSED
+% nvprof --print-gpu-trace ./vectorAddGPUCublas
+[Vector addition of 1M elements]
+==34016== NVPROF is profiling process 34016, command: ./vectorAddGPUCublas
+Vector Add on GPU with libcublas time: 4.100ms
+Test PASSED
+==34016== Profiling application: ./vectorAddGPUCublas
+==34016== Profiling result:
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+3.13534s  727.81us                    -               -         -         -         -  3.8147MB  5.1185GB/s    Pageable      Device  Quadro T2000 (0         1        13  [CUDA memcpy HtoD]
+3.13612s  601.09us                    -               -         -         -         -  3.8147MB  6.1976GB/s    Pageable      Device  Quadro T2000 (0         1        13  [CUDA memcpy HtoD]
+3.13716s  103.65us           (3907 1 1)       (256 1 1)        32        0B        0B         -           -           -           -  Quadro T2000 (0         1        13  void axpy_kernel_val<float, float>(cublasAxpyParamsVal<float, float, float>) [1184]
+3.13726s  1.1934ms                    -               -         -         -         -  3.8147MB  3.1216GB/s      Device    Pageable  Quadro T2000 (0         1        13  [CUDA memcpy DtoH]
+```
+
 ## Results on an Ubuntu 17.04 CUDA 9.0 Nvidia GeForce GT 650M (Macbook Pro 2012)
 
 ```
@@ -6,7 +52,8 @@
 [Vector addition of 10000000 elements]
 Copy input data from the host memory to the CUDA device
 CUDA vectorAdd kernel launch with 39063 blocks of 256 threads
-Copy output data from the CUDA device to the host memory
+Copy output data from the CUDA devi```
+ce to the host memory
 Vector Add on GPU time: 31.708ms
 Test PASSED
 % sudo /usr/local/cuda-9.0/bin/nvprof --print-gpu-trace ./vectorAddGPU

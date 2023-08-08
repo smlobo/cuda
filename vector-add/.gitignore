@@ -1,3 +1,5 @@
 vectorAddGPU
 vectorAddGPUGridStride
+vectorAddGPUChunk
+vectorAddGPUCublas
 vectorAddCPU
