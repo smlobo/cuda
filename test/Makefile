@@ -1,6 +1,6 @@
 # Makefile for "test"
 
-CPP_FLAGS = -O -std=c++14
+CPP_FLAGS = -O2 -std=c++14
 # CPP_FLAGS = -g -std=c++14
 
 INCLUDE_DIR = -I../common

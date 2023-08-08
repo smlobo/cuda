@@ -3,7 +3,7 @@
 # * GPU with a Grid Stride loop
 # * CPU
 
-CPP_FLAGS = -O -std=c++14
+CPP_FLAGS = -O2 --std=c++20
 
 INCLUDE_DIR = -I../common
 

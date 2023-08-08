@@ -107,6 +107,26 @@ constructor function of the form make_<type name>; for example,
 
 int2 make_int2(int x, int y);
 
+BLAS
+~~~~
+
+Basic Linear Algebra Subprograms
+
+Level 1: 
+  * Vector, Vector operation
+  * O(n)
+  * axpy (a.x + y)
+Level 2: 
+  * Matrix, Vector operation
+  * O(n^2)
+  * GEMV (GEneral Matrix Vector multipy)
+  * c = alpha*a*b' + c
+Level 3: 
+  * Matrix, Matrix operation
+  * O(n^3)
+  * GEMM (GEneral Matrix Multiply)
+  * c = alpha*a*b + beta*c
+
 GPU Architecture
 ~~~~~~~~~~~~~~~~
 
@@ -148,9 +168,27 @@ GeForce GT 650M
 * TMUs 32
 * ROPs 16
 * SMX Count 2
-* Shared Memory 48K
+* Shared Memory 48 KB
 * L1 Cache 16 KB (per SMX)
 * L2 Cache 256 KB
+* 729.6 GFLOPS
+
+Quadro T2000
+~~~~~~~~~~~~
+
+* CC7.5
+* TU117
+* Turing Architecture
+* CUDA Cores 1024
+* TMUs 64 (Texture Mapping Unit; rotate, resize, distort a bitmap image)
+* ROPS 32 (Render Output Unit / Raster Operations Pipeline; final unit before framebuffer)
+* Tensor Cores 0 (Tensor object; Matrix multiplication - gemm)
+* RT Cores 0 (Real-Time Ray Tracing)
+* Turing SM Count 16
+* Shared Memory 32-64 KB
+* L1 Cache 64-32 KB (per SM)
+* L2 Cache 1 MB
+* 3.656 TFLOPS
 
 nvprof
 ~~~~~~
