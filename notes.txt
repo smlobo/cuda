@@ -3,14 +3,20 @@ SIMT
 ~~~~
 
 Single Instruction Multiple Threads
-The simplest way to understand SIMT is to imagine a multi-core system, where each core has its own register file, its own ALUs (both SIMD and Scalar) and its own data cache, but that unlike a standard multi-core system which has multiple independent instruction caches and decoders, as well as multiple independent Program Counter registers, the instructions are synchronously broadcast to all SIMT cores from a single unit with a single instruction cache and a single instruction decoder which reads instructions using a single Program Counter.
+The simplest way to understand SIMT is to imagine a multi-core system, where 
+each core has its own register file, its own ALUs (both SIMD and Scalar) and its 
+own data cache, but that unlike a standard multi-core system which has multiple 
+independent instruction caches and decoders, as well as multiple independent 
+Program Counter registers, the instructions are synchronously broadcast to all 
+SIMT cores from a single unit with a single instruction cache and a single 
+instruction decoder which reads instructions using a single Program Counter.
 
 Since all Threads in a Warp execute the same instructions, branches result in 
 extra code being unnecessarily executed.
-For simple branches, predicated instructions are generated. These are not 
-terrible for performance.
-For complex branches, Threads for the "other" conditional are flagged and 
-execute NOPs. This is the "branch divergence" penalty on CUDA.
+  * For simple branches, predicated instructions are generated. These are not 
+    terrible for performance.
+  * For complex branches, Threads for the "other" conditional are flagged and 
+    execute NOPs. This is the "branch divergence" penalty on CUDA.
 
 SIMD
 ~~~~
@@ -154,7 +160,7 @@ Architecture Generations
 * Fermi SM
 * Kepler SMX
 * Maxwell/Pascal SMM
-* Pascal/Volta (Tensor core)
+* Pascal/Volta (+ Tensor core)
 * Turing
 * Ampere
 
@@ -164,7 +170,7 @@ GeForce GT 650M
 * CC3.0
 * GK107
 * Kepler Architecture
-* CUDA Cores 384
+* CUDA Cores 384 (SMs * SP-Cores/SM = 2 * 192)
 * TMUs 32
 * ROPs 16
 * SMX Count 2
@@ -179,7 +185,7 @@ Quadro T2000
 * CC7.5
 * TU117
 * Turing Architecture
-* CUDA Cores 1024
+* CUDA Cores 1024 (SMs * SP-Cores/SM = 16 * 64)
 * TMUs 64 (Texture Mapping Unit; rotate, resize, distort a bitmap image)
 * ROPS 32 (Render Output Unit / Raster Operations Pipeline; final unit before framebuffer)
 * Tensor Cores 0 (Tensor object; Matrix multiplication - gemm)
@@ -266,4 +272,153 @@ producer = cuda
 host = linux
 compile_size = 64bit
 compressed
+
+% cuobjdump -lptx cudaTensorCoreGemm.simple
+PTX file    1: cudaTensorCoreGemm.1.sm_90.ptx
+
+% cuobjdump -arch sm_75 -sass cudaTensorCoreGemm.simple
+...
+Fatbin elf code:
+================
+arch = sm_75
+code version = [1,7]
+host = linux
+compile_size = 64bit
+
+        code for sm_75
+                Function : _Z16simple_wmma_gemmP6__halfS0_PfS1_iiiff
+        .headerflags    @"EF_CUDA_TEXMODE_UNIFIED EF_CUDA_64BIT_ADDRESS EF_CUDA_SM75 EF_CUDA_VIRTUAL_SM(EF_CUDA_SM75)"
+        /*0000*/                   IMAD.MOV.U32 R1, RZ, RZ, c[0x0][0x28] ;               /* 0x00000a00ff017624 */
+                                                                                         /* 0x000fc400078e00ff */
+        /*0010*/                   I2F.U32.RP R4, 0x20 ;                                 /* 0x0000002000047906 */
+                                                                                         /* 0x000e220000209000 */
+        /*0020*/                   S2R R5, SR_CTAID.X ;                                  /* 0x0000000000057919 */
+                                                                                         /* 0x000e620000002500 */
+        /*0030*/                   ISETP.LT.AND P2, PT, RZ, c[0x0][0x188], PT ;          /* 0x00006200ff007a0c */
+                                                                                         /* 0x000fc60003f41270 */
+        /*0040*/                   S2R R6, SR_TID.X ;                                    /* 0x0000000000067919 */
+                                                                                         /* 0x000e660000002100 */
+...
+
+% cuobjdump -arch sm_75 -sass cudaTensorCoreGemm.simple | grep Function
+    Function : _Z16simple_wmma_gemmP6__halfS0_PfS1_iiiff
+    Function : _Z12compute_gemmPK6__halfS1_PKfPfff
+
+% cuobjdump -arch sm_75 -sass cudaTensorCoreGemm.simple | grep Function | cu++filt 
+    Function : simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float)
+    Function : compute_gemm(const __half *, const __half *, const float *, float *, float, float)
+
+% cuobjdump -ltext cudaTensorCoreGemm.simple | cu++filt 
+SASS text section 1 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_70.elf.bin
+SASS text section 2 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_70.elf.bin
+SASS text section 3 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_75.elf.bin
+SASS text section 4 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_75.elf.bin
+SASS text section 5 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_80.elf.bin
+SASS text section 6 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_80.elf.bin
+SASS text section 7 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_86.elf.bin
+SASS text section 8 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_86.elf.bin
+SASS text section 9 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_89.elf.bin
+SASS text section 10 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_89.elf.bin
+SASS text section 11 : x-simple_wmma_gemm(__half *, __half *, float *, float *, int, int, int, float, float).sm_90.elf.bin
+SASS text section 12 : x-compute_gemm(const __half *, const __half *, const float *, float *, float, float).sm_90.elf.bin
+
+% cuobjdump -lptx cudaTensorCoreGemm.simple
+PTX file    1: cudaTensorCoreGemm.1.sm_90.ptx
+
+% cuobjdump -lelf cudaTensorCoreGemm.simple
+ELF file    1: cudaTensorCoreGemm.1.sm_70.cubin
+ELF file    2: cudaTensorCoreGemm.2.sm_75.cubin
+ELF file    3: cudaTensorCoreGemm.3.sm_80.cubin
+ELF file    4: cudaTensorCoreGemm.4.sm_86.cubin
+ELF file    5: cudaTensorCoreGemm.5.sm_89.cubin
+ELF file    6: cudaTensorCoreGemm.6.sm_90.cubin
+ELF file    7: cudaTensorCoreGemm.7.sm_70.cubin
+ELF file    8: cudaTensorCoreGemm.8.sm_75.cubin
+ELF file    9: cudaTensorCoreGemm.9.sm_80.cubin
+ELF file   10: cudaTensorCoreGemm.10.sm_86.cubin
+ELF file   11: cudaTensorCoreGemm.11.sm_89.cubin
+ELF file   12: cudaTensorCoreGemm.12.sm_90.cubin
+
+% cuobjdump -ptx cudaTensorCoreGemm.simple
+...
+Fatbin ptx code:
+================
+arch = sm_90
+code version = [8,2]
+host = linux
+compile_size = 64bit
+compressed
+ptxasOptions =  -maxrregcount=255
+
+.version 8.2
+.target sm_90
+.address_size 64
+
+
+.extern .shared .align 16 .b8 shmem[];
+
+.visible .entry _Z12compute_gemmPK6__halfS1_PKfPfff(
+.param .u64 _Z12compute_gemmPK6__halfS1_PKfPfff_param_0,
+.param .u64 _Z12compute_gemmPK6__halfS1_PKfPfff_param_1,
+...
+)
+{
+.reg .pred %p<5>;
+.reg .f32 %f<16581>;
+.reg .b32 %r<16730>;
+.reg .b64 %rd<1586>;
+
+ld.param.u64 %rd13, [_Z12compute_gemmPK6__halfS1_PKfPfff_param_0];
+ld.param.u64 %rd14, [_Z12compute_gemmPK6__halfS1_PKfPfff_param_1];
+...
+$L__BB0_2:
+mov.u32 %r16727, %tid.x;
+shr.u32 %r16726, %r16727, 5;
+...
+wmma.store.d.sync.aligned.row.m16n16k16.global.f32 [%rd54], {%f157, %f159, %f161, %f163, %f165, %f167, %f169, %f171}, %r18;
+
+$L__BB1_20:
+ret;
+
+}
+
+Nvidia Elf file
+~~~~~~~~~~~~~~~
+
+% readelf -S cudaTensorCoreGemm.simple
+There are 35 section headers, starting at offset 0x260b78:
+
+Section Headers:
+  [Nr] Name              Type             Address           Offset
+       Size              EntSize          Flags  Link  Info  Align
+...
+[18] .nv_fatbin        PROGBITS         0000000000092fa0  00092fa0
+     0000000000172570  0000000000000000   A       0     0     8
+[19] __nv_module_id    PROGBITS         0000000000205510  00205510
+     000000000000000f  0000000000000000   A       0     0     8
+...
+  [29] .nvFatBinSegment  PROGBITS         000000000021f198  0021e198
+       0000000000000030  0000000000000000  WA       0     0     8
+...
+
+% objdump -j __nv_module_id -s cudaTensorCoreGemm.opt
+
+cudaTensorCoreGemm.opt:     file format elf64-x86-64
+
+Contents of section __nv_module_id:
+ 205510 5f5f4e56 5f4d4f44 554c455f 494400    __NV_MODULE_ID. 
+
+CUDA DNN
+~~~~~~~~
+
+Deep Neural Network library
+
+
+% ls /usr/src/cudnn_samples_v8/
+% ls /usr/include/cudnn*
+/usr/include/cudnn_adv_infer.h  /usr/include/cudnn_cnn_infer.h  /usr/include/cudnn_ops_infer.h
+/usr/include/cudnn_adv_train.h  /usr/include/cudnn_cnn_train.h  /usr/include/cudnn_ops_train.h
+/usr/include/cudnn_backend.h    /usr/include/cudnn.h            /usr/include/cudnn_version.h
+% ls /usr/lib/x86_64-linux-gnu/libcudnn.so
+/usr/lib/x86_64-linux-gnu/libcudnn.so
 
