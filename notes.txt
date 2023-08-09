@@ -45,14 +45,17 @@ Performance Toolkit
     the input vectors by Grid stride (gridDim * blockDim)
   - Shared Memory
     Use the faster Shared memory bank in each SP/Core to cache data common 
-    to multiple threads. In Matrix Multiply, each thread iterates over (common) 
-    rows and columns. If this is cached, the 32 threads have reduced memory 
-    latency, and better thread occupancy.
+    to multiple threads. In Matrix Multiply use Tiling so that each thread 
+    iterates over (common) rows and columns. If this is cached, the 32 threads 
+    have reduced memory latency, and better thread occupancy.
 * Reductions (Summing)
   - Binary Tree
     Each thread performs partial sum.
+    . Use every thread for the first reduction [T0: 0+1; T1: 2+3; T2: 4+5;...]
+    . Avoid using the % operator
+    . Avoid Shared Memory Bank conflicts by [T0: 0+strids; T1: 1+(stride+1);...]
     . Grid Stride Loop to reduce problem to gridDim*blockDim
-    . Shared Memory for caching between threads in the same block.
+    . The load of global to shared memory does the first sum
 
 Shared memory:
 ~~~~~~~~~~~~~~
@@ -81,6 +84,14 @@ Shared memory:
     int shared_size_in_bytes = 192;
     k<<<grid, block, shared_size_in_bytes>>>(...);
 
+Unified Memory
+~~~~~~~~~~~~~~
+
+* cudaMallocManaged(&a, size);
+* cudaMemPrefetchAsync(a, size, cudaGetDevice(&id));
+* cudaMemPrefetchAsync(a, size, cudaCpuDeviceId);
+* cudaFree(a);
+
 Atomics
 ~~~~~~~
 
@@ -96,12 +107,6 @@ Atomics
     int my_position = atomicAdd(order, 1);
   o Reserve space in a buffer
     int my_offset = atomicAdd(buffer_idx, my_dsize);
-
-Reductions
-~~~~~~~~~~
-
-* Parallel reduction; Tree based approach
-* Decompose into multiple kernels
 
 Vector Types
 ~~~~~~~~~~~~
@@ -199,6 +204,65 @@ Quadro T2000
 * L1 Cache 64-32 KB (per SM)
 * L2 Cache 1 MB
 * 3.656 TFLOPS
+
+nvcc
+~~~~
+
+% nvcc -O2 --std=c++20 -v vectorAddGPU.cu -o vectorAddGPU
+...
+gcc vectorAdd.cu -o vectorAdd.cpp4.ii
+cudafe++ --gen_c_file_name "vectorAdd.cudafe1.cpp" --stub_file_name "vectorAdd.cudafe1.stub.c" --gen_module_id_file --module_id_file_name "vectorAdd.module_id" "vectorAdd.cpp4.ii"
+gcc vectorAdd.cu -o vectorAdd.cpp1.ii
+cicc --include_file_name "vectorAdd.fatbin.c" -tused --module_id_file_name "vectorAdd.module_id" --gen_c_file_name "vectorAdd.cudafe1.c" --stub_file_name "vectorAdd.cudafe1.stub.c" --gen_device_file_name "vectorAdd.cudafe1.gpu"  "vectorAdd.cpp1.ii" -o "vectorAdd.ptx"
+ptxas -arch=sm_52 -m64  "vectorAdd.ptx"  -o "vectorAdd.sm_52.cubin" 
+fatbinary --create="vectorAdd.fatbin" "--image3=kind=elf,sm=52,file=vectorAdd.sm_52.cubin" "--image3=kind=ptx,sm=52,file=vectorAdd.ptx" --embedded-fatbin="vectorAdd.fatbin.c"
+gcc vectorAdd.cudafe1.cpp -o vectorAdd.o
+nvlink --register-link-binaries="vectorAdd_dlink.reg.c" "vectorAdd.o"  -lcudadevrt  -o "vectorAdd_dlink.sm_52.cubin" --host-ccbin "gcc"
+fatbinary --create="vectorAdd_dlink.fatbin" " -link "--image3=kind=elf,sm=52,file=vectorAdd_dlink.sm_52.cubin" --embedded-fatbin="vectorAdd_dlink.fatbin.c" 
+gcc -c -x c++ -DFATBINFILE="\"vectorAdd_dlink.fatbin.c\"" -DREGISTERLINKBINARYFILE="\"vectorAdd_dlink.reg.c\"" -o "vectorAdd_dlink.o" 
+g++ "vectorAdd_dlink.o" "vectorAdd.o" -lcudadevrt -lcudart_static -lrt -lpthread -ldl -o "vectorAdd" 
+
+% cuobjdump -lelf -ltext -lptx  vectorAdd.fatbin
+ELF file    1: vectorAdd.1.sm_52.cubin
+PTX file    1: vectorAdd.1.sm_52.ptx
+% cuobjdump -lelf -ltext vectorAdd_dlink.fatbin
+ELF file    1: vectorAdd_dlink.1.sm_52.cubin
+% cuobjdump -lelf -ltext -lptx  vectorAdd
+ELF file    1: vectorAdd.1.sm_52.cubin
+ELF file    2: vectorAdd.2.sm_52.cubin
+PTX file    1: vectorAdd.1.sm_52.ptx
+
+% readelf -t vectorAdd.o | grep -A3 nv_fatbin
+  [76] .nv_fatbin
+       PROGBITS         0000000000000000  0000000000000cd0  0
+       0000000000000b20 0000000000000000  0                 8
+       [0000000000000002]: ALLOC
+% readelf -t vectorAdd_dlink.o | grep -A3 nv_fatbin
+  [ 5] .nv_fatbin
+       PROGBITS         0000000000000000  0000000000000060  0
+       00000000000003d0 0000000000000000  0                 8
+       [0000000000000002]: ALLOC
+% readelf -t vectorAdd | grep -A3 nv_fatbin
+  [18] .nv_fatbin
+       PROGBITS         0000000000091180  0000000000091180  0
+       0000000000000ef0 0000000000000000  0                 8
+       [0000000000000002]: ALLOC
+
+% objdump -t vectorAdd | grep -i fat | c++filt 
+00000000000ac1d8 l     O .bss 0000000000000008              __cudaFatCubinHandle
+00000000000ac1e0 l     O .bss 0000000000000008              __cudaPrelinkedFatbins
+0000000000091180 l       .nv_fatbin 0000000000000000              fatbinData
+00000000000ac058 l     O .nvFatBinSegment 0000000000000018              __fatDeviceText
+00000000000ac1f0 l     O .bss 0000000000000008              __nv_fatbinhandle_for_managed_rt
+000000000000ac43 l     F .text  000000000000001a              __nv_save_fatbinhandle_for_managed_rt(void**)
+00000000000ac208 l     O .bss 0000000000000008              __cudaFatCubinHandle
+0000000000091550 l       .nv_fatbin 0000000000000000              fatbinData
+00000000000ac070 l     O .nvFatBinSegment 0000000000000018              __fatDeviceText
+000000000001ee20 l     F .text  0000000000000022              __cudaRegisterFatBinaryEnd
+000000000001ee50 l     F .text  0000000000000037              __cudaUnregisterFatBinary
+000000000001edf0 l     F .text  000000000000002b              __cudaRegisterFatBinary
+00000000000ac088 g       .nvFatBinSegment 0000000000000000              _edata
+00000000000ac058 g     O .nvFatBinSegment 0000000000000000              .hidden __TMC_END__
 
 nvprof
 ~~~~~~

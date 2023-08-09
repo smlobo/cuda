@@ -6,6 +6,7 @@
 # * CPU
 
 CPP_FLAGS = -O2 --std=c++20
+#CPP_FLAGS = -O2 --std=c++20 -v -keeptmp
 
 INCLUDE_DIR = -I../common
 
