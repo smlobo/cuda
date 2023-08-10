@@ -584,9 +584,3 @@ TensorRT
 ...
 &&&& PASSED TensorRT.trtexec [TensorRT v8601] # ./trtexec --explicitBatch --onnx=../data/mnist/mnist.onnx --workspace=1024
 
-Questions
-~~~~~~~~~
-
-* TensorRT library testing?
-* Any other library testing?
-* Compiler testing?
