@@ -36,6 +36,15 @@ Terms
 Scalar: Single data type
 Vector: Collection of scalar elements
 
+DLA: Deep Learning Accelerator
+ONNX: Open Neural Network Exchange
+Frameworks:
+  * PyTorch
+  * TensorFlow
+  * Caffe
+
+
+
 Performance Toolkit
 ~~~~~~~~~~~~~~~~~~~
 
@@ -264,6 +273,13 @@ PTX file    1: vectorAdd.1.sm_52.ptx
 00000000000ac088 g       .nvFatBinSegment 0000000000000000              _edata
 00000000000ac058 g     O .nvFatBinSegment 0000000000000000              .hidden __TMC_END__
 
+% nvcc --ptxas-options=-v vectorAdd.cu -o vectorAdd
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z9vectorAddPKiS0_Pii' for 'sm_52'
+ptxas info    : Function properties for _Z9vectorAddPKiS0_Pii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 8 registers, 348 bytes cmem[0]
+
 nvprof
 ~~~~~~
 
@@ -489,6 +505,38 @@ Deep Neural Network library
 % ls /usr/lib/x86_64-linux-gnu/libcudnn.so
 /usr/lib/x86_64-linux-gnu/libcudnn.so
 
+Sample:
+% pwd
+/home/sheldon/cudnn_samples_v8/mnistCUDNN
+% make all TARGET_ARCH=x86_64
+% ./mnistCUDNN 
+Executing: mnistCUDNN
+cudnnGetVersion() : 8903 , CUDNN_VERSION from cudnn.h : 8903 (8.9.3)
+Host compiler version : GCC 11.4.0
+
+There are 1 CUDA capable devices on your machine :
+device 0 : sms 16  Capabilities 7.5, SmClock 1785.0 Mhz, MemSize (Mb) 3903, MemClock 4001.0 Mhz, Ecc=0, boardGroupID=0
+Using device 0
+
+Testing single precision
+...
+Resulting weights from Softmax:
+0.0000000 0.0000008 0.0000000 0.0000002 0.0000000 0.9999820 0.0000154 0.0000000 0.0000012 0.0000006 
+
+Result of classification: 1 3 5
+
+Test passed!
+
+Testing half precision (math in single precision)
+...
+Resulting weights from Softmax:
+0.0000000 0.0000008 0.0000000 0.0000002 0.0000000 1.0000000 0.0000154 0.0000000 0.0000012 0.0000006 
+
+Result of classification: 1 3 5
+
+Test passed!
+
+
 CUDA BLAS
 ~~~~~~~~~
 
@@ -504,3 +552,41 @@ CUDA BLAS
   libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007ff1e6b18000)
   libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007ff1e6b13000)
   libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007ff1e6a2c000)
+
+TensorRT
+~~~~~~~~
+
+% ls /usr/src/tensorrt/samples/
+
+% cd sampleOnnxMNIST/; make
+...
+% ./sample_onnx_mnist --fp16
+&&&& RUNNING TensorRT.sample_onnx_mnist [TensorRT v8601] # ./sample_onnx_mnist --fp16
+[08/09/2023-21:58:34] [I] Building and running a GPU inference engine for Onnx MNIST
+[08/09/2023-21:58:36] [I] [TRT] [MemUsageChange] Init CUDA: CPU +14, GPU +0, now: CPU 19, GPU 62 (MiB)
+...
+[08/09/2023-21:58:47] [I] Output:
+[08/09/2023-21:58:47] [I]  Prob 0  0.0000 Class 0: 
+[08/09/2023-21:58:47] [I]  Prob 1  0.0000 Class 1: 
+[08/09/2023-21:58:47] [I]  Prob 2  0.0000 Class 2: 
+[08/09/2023-21:58:47] [I]  Prob 3  0.0000 Class 3: 
+[08/09/2023-21:58:47] [I]  Prob 4  0.9911 Class 4: **********
+[08/09/2023-21:58:47] [I]  Prob 5  0.0001 Class 5: 
+[08/09/2023-21:58:47] [I]  Prob 6  0.0000 Class 6: 
+[08/09/2023-21:58:47] [I]  Prob 7  0.0000 Class 7: 
+[08/09/2023-21:58:47] [I]  Prob 8  0.0000 Class 8: 
+[08/09/2023-21:58:47] [I]  Prob 9  0.0088 Class 9: 
+[08/09/2023-21:58:47] [I] 
+&&&& PASSED TensorRT.sample_onnx_mnist [TensorRT v8601] # ./sample_onnx_mnist --fp16
+
+
+% ./trtexec --explicitBatch --onnx=../data/mnist/mnist.onnx --workspace=1024
+...
+&&&& PASSED TensorRT.trtexec [TensorRT v8601] # ./trtexec --explicitBatch --onnx=../data/mnist/mnist.onnx --workspace=1024
+
+Questions
+~~~~~~~~~
+
+* TensorRT library testing?
+* Any other library testing?
+* Compiler testing?
