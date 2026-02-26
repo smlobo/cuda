@@ -27,3 +27,6 @@ matrixMultiplyCPU:
 	g++ $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) matrixMultiplyCPU.cc \
 	-o matrixMultiplyCPU
 
+clean:
+	rm -rf matrixMultiplyGPU matrixMultiplyGPUShared matrixMultiplyCPU
+
