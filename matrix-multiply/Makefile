@@ -3,6 +3,9 @@
 # * GPU with SM shared memory
 # * CPU
 
+NVCC = nvcc
+# NVCC = /usr/local/cuda-13.1/bin/nvcc
+
 CPP_FLAGS = -O2 -std=c++14
 # CPP_FLAGS = -g -std=c++14
 
@@ -14,12 +17,12 @@ all: matrixMultiplyGPU matrixMultiplyGPUShared matrixMultiplyCPU
 
 .PHONY: matrixMultiplyGPU
 matrixMultiplyGPU:
-	nvcc $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) matrixMultiplyGPU.cu \
+	$(NVCC) $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) matrixMultiplyGPU.cu \
 	-o matrixMultiplyGPU
 
 .PHONY: matrixMultiplyGPUShared
 matrixMultiplyGPUShared:
-	nvcc $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) \
+	$(NVCC) $(CPP_FLAGS) $(INCLUDE_DIR) $(COMMON_FILES) \
 	matrixMultiplyGPUShared.cu -o matrixMultiplyGPUShared
 
 .PHONY: matrixMultiplyCPU
